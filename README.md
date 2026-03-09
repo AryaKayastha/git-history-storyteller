@@ -10,13 +10,15 @@ A Streamlit web application that analyses the complete Git commit history of any
 
 | Feature | Description |
 |---|---|
-| **Repository Ingestion** | Clone any public Git repo and extract full commit metadata |
-| **Commit Classification** | Automatically categorise commits (feat, fix, refactor, test, docs, chore) |
-| **Development Phase Detection** | Identify phases like initial setup, feature development, stabilisation |
-| **Milestone Detection** | Spot key events — first commit, large refactors, releases, contributor growth |
-| **Contributor Insights** | Rank contributors, show commit distribution and activity timelines |
-| **AI Narrative Generation** | Hugging Face–powered chronological story of the project's evolution |
-| **Interactive Visualisations** | Commit activity charts, contributor bar charts, commit type pie charts, code churn |
+| **Repository Ingestion** | Clone any public Git repo and extract full commit metadata, branches, and tags |
+| **Commit Classification** | Automatically categorise commits into 9 types: feat, fix, perf, refactor, test, docs, build/CI, deps, chore |
+| **Development Phase Detection** | Identify phases like initial setup, feature development, rapid expansion, stabilisation, refactoring, maintenance |
+| **Milestone Detection** | Detect first commit, releases, large refactors, new modules, testing frameworks, infrastructure changes, dependency transitions, contributor growth |
+| **Contributor Insights** | Rank contributors, show commit distribution, and analyse collaboration intensity per development phase |
+| **Branch Structure** | Extract and display all repository branches |
+| **Inactivity Detection** | Identify periods of inactivity (gaps with no commits) in the project timeline |
+| **AI Narrative Generation** | Hugging Face–powered documentary-style chronological story with beginning, turning points, collaboration evolution, and current state |
+| **Interactive Visualisations** | Commit activity charts, contributor bar charts, commit type pie charts, code churn over time |
 
 ---
 
@@ -29,14 +31,17 @@ User Interface (Streamlit)
 Repository Ingestion (GitPython)
         │
         ▼
-Data Extraction (commits, authors, timestamps, diffs)
+Data Extraction (commits, authors, timestamps, diffs, branches, tags)
         │
         ▼
 Repository Analysis Engine
         ├── Commit Activity Analysis
-        ├── Contributor Analysis
-        ├── Milestone Detection
-        └── Change Classification
+        ├── Commit Type Classification (9 categories)
+        ├── Contributor Analysis & Collaboration Intensity
+        ├── Development Phase Detection
+        ├── Milestone Detection (10 signal types)
+        ├── Branch Structure Extraction
+        └── Inactivity Period Detection
         │
         ▼
 Structured Repository Summary
@@ -141,11 +146,13 @@ export HF_TOKEN=hf_your_token_here
 After analysing a repository you will see:
 
 - **Key Metrics** — total commits, contributors, lines added/deleted, merges
-- **AI Narrative** — a chronological story of the project's evolution
+- **AI Narrative** — a documentary-style chronological story with beginning, development journey, turning points, collaboration patterns, and current state
 - **Development Phases** — detected phases with date ranges and commit counts
-- **Timeline** — key milestones with dates and descriptions
-- **Contributor Insights** — ranked table + bar chart
-- **Visualisations** — commit activity, commit types, code churn charts
+- **Timeline** — key milestones including releases, module introductions, testing frameworks, infrastructure changes, and dependency transitions
+- **Contributor Insights** — ranked table + bar chart + collaboration intensity per phase
+- **Inactivity Periods** — detected gaps with no development activity
+- **Branch Structure** — all repository branches listed
+- **Visualisations** — commit activity over time, commit type distribution (9 categories), code churn charts
 
 ---
 
