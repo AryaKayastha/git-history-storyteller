@@ -10,7 +10,8 @@ A Streamlit web application that analyses the complete Git commit history of any
 
 | Feature | Description |
 |---|---|
-| **Repository Ingestion** | Clone any public Git repo and extract full commit metadata, branches, and tags |
+| **GitHub API Integration** | Fetches commit data directly via GitHub REST API — no cloning needed for GitHub URLs (runs in seconds) |
+| **Git Clone Fallback** | Falls back to shallow git clone for non-GitHub URLs |
 | **Commit Classification** | Automatically categorise commits into 9 types: feat, fix, perf, refactor, test, docs, build/CI, deps, chore |
 | **Development Phase Detection** | Identify phases like initial setup, feature development, rapid expansion, stabilisation, refactoring, maintenance |
 | **Milestone Detection** | Detect first commit, releases, large refactors, new modules, testing frameworks, infrastructure changes, dependency transitions, contributor growth |
@@ -28,7 +29,9 @@ A Streamlit web application that analyses the complete Git commit history of any
 User Interface (Streamlit)
         │
         ▼
-Repository Ingestion (GitPython)
+Data Fetching
+  ├── GitHub REST API  (fast, no clone — for github.com URLs)
+  └── Git Clone        (fallback for other Git URLs)
         │
         ▼
 Data Extraction (commits, authors, timestamps, diffs, branches, tags)
@@ -67,7 +70,7 @@ git-history-storyteller/
 ├── visualization.py        # matplotlib/seaborn chart generators
 ├── utils/
 │   ├── __init__.py
-│   └── git_helpers.py      # Git clone, metadata extraction, cleanup
+│   └── git_helpers.py      # GitHub API, git clone, metadata extraction
 ├── requirements.txt
 └── README.md
 ```
@@ -85,7 +88,7 @@ git-history-storyteller/
 
 ```bash
 # Clone this project
-git clone <this-repo-url>
+git clone https://github.com/AryaKayastha/git-history-storyteller.git
 cd git-history-storyteller
 
 # Create a virtual environment (recommended)
@@ -105,12 +108,36 @@ streamlit run app.py
 
 The application will open in your browser at `http://localhost:8501`.
 
+### Stopping the App
+
+Press `Ctrl+C` in the terminal, or force-kill with:
+```powershell
+Get-Process -Id (Get-NetTCPConnection -LocalPort 8501).OwningProcess | Stop-Process -Force
+```
+
 ### Usage
 
 1. Enter a **public Git repository URL** in the sidebar (e.g. `https://github.com/psf/requests`)
-2. (Optional) Provide a **Hugging Face API token** for better AI narratives
-3. Click **🚀 Analyze Repository**
-4. Explore the narrative, milestones, contributor insights, and charts
+2. (Recommended) Provide a **GitHub personal access token** for full stats (lines added/deleted) and higher rate limits
+3. (Optional) Provide a **Hugging Face API token** for better AI narratives
+4. Click **🚀 Analyze Repository**
+5. Explore the narrative, milestones, contributor insights, and charts
+
+---
+
+## 🔑 Tokens
+
+### GitHub Token (Recommended)
+
+A GitHub token increases the API rate limit from 60 to 5,000 requests/hour and enables per-commit file/line statistics.
+
+1. Go to **github.com → Settings → Developer settings → Personal access tokens → Fine-grained tokens**
+2. Click "Generate new token" — no special permissions needed for public repos
+3. Paste the token into the **"GitHub Token"** field in the sidebar
+
+### Hugging Face Token (Optional)
+
+Enables the HF Inference API for higher-quality AI narratives.
 
 ---
 
@@ -128,16 +155,6 @@ The narrative generator supports three strategies (tried in order):
 - `facebook/bart-large-cnn` (default — best for summarisation)
 - `t5-small` (lightweight alternative)
 - `sshleifer/distilbart-cnn-12-6` (distilled, faster)
-
-To set your Hugging Face token as an environment variable:
-
-```bash
-# Windows
-set HF_TOKEN=hf_your_token_here
-
-# macOS/Linux
-export HF_TOKEN=hf_your_token_here
-```
 
 ---
 
@@ -158,12 +175,14 @@ After analysing a repository you will see:
 
 ## 🛠️ Technology Stack
 
-- **Python**
+- **Python** — core language
 - **Streamlit** — interactive web UI
-- **GitPython** — Git repository interaction
+- **GitHub REST API** — fast commit data fetching (no clone needed)
+- **GitPython** — fallback Git repository interaction
 - **pandas / numpy** — data processing
 - **matplotlib / seaborn** — visualisations
 - **Hugging Face transformers** — AI narrative generation
+- **requests** — HTTP client for API calls
 
 ---
 
