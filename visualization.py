@@ -141,8 +141,11 @@ def plot_lines_over_time(df: pd.DataFrame) -> plt.Figure:
     """
     fig, ax = plt.subplots(figsize=(12, 4))
 
-    if df.empty:
-        ax.text(0.5, 0.5, "No data", ha="center", va="center", transform=ax.transAxes)
+    if df.empty or (df["lines_added"].sum() == 0 and df["lines_deleted"].sum() == 0):
+        ax.text(0.5, 0.5, "No line-level data available", ha="center", va="center",
+                transform=ax.transAxes, fontsize=12, color="gray")
+        ax.set_title("Code Churn Over Time")
+        fig.tight_layout()
         return fig
 
     monthly = df.set_index("date").resample("ME").agg(

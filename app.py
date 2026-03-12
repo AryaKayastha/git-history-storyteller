@@ -11,7 +11,11 @@ import os
 import streamlit as st
 
 # ── Local modules ──────────────────────────────────────────────────
-from utils.git_helpers import clone_repository, extract_commit_metadata, get_tags, cleanup_repo, get_branches, detect_inactivity_periods
+from utils.git_helpers import (
+    clone_repository, extract_commit_metadata, get_tags, cleanup_repo,
+    get_branches, detect_inactivity_periods,
+    parse_github_url, fetch_github_commits, fetch_github_tags, fetch_github_branches,
+)
 from commit_classifier import classify_commits, commit_type_counts
 from repo_analyzer import (
     compute_commit_statistics,
@@ -110,6 +114,13 @@ with st.sidebar:
         placeholder="https://github.com/psf/requests",
         help="Enter any public Git repository URL",
     )
+    github_token = st.text_input(
+        "GitHub Token (recommended)",
+        type="password",
+        help="A GitHub personal access token gives 5000 API req/hr (vs 60 without). "
+             "Needed for lines-added / lines-deleted stats. "
+             "Create one at github.com → Settings → Developer settings → Personal access tokens → Fine-grained tokens (no scopes needed for public repos).",
+    )
     hf_token = st.text_input(
         "Hugging Face Token (optional)",
         type="password",
@@ -125,12 +136,12 @@ with st.sidebar:
         index=0,
     )
     max_commits = st.slider("Max commits to analyse", 100, 5000, 500, step=100)
-    analyze_btn = st.button("🚀 Analyze Repository", type="primary", use_container_width=True)
+    analyze_btn = st.button("🚀 Analyze Repository", type="primary", width="stretch")
 
     st.markdown("---")
     st.markdown(
         "**How it works**\n\n"
-        "1. Clones the repository\n"
+        "1. Fetches commit data via GitHub API (or clones for non-GitHub URLs)\n"
         "2. Extracts all commit metadata\n"
         "3. Classifies commits & detects milestones\n"
         "4. Generates a chronological narrative using AI\n"
@@ -140,19 +151,31 @@ with st.sidebar:
 # ── Main analysis flow ────────────────────────────────────────────
 if analyze_btn and repo_url:
     repo = None
+    gh_parsed = parse_github_url(repo_url)
     try:
-        # ── Step 1: Clone ──────────────────────────────────────────
         with st.status("🔄 Analysing repository...", expanded=True) as status:
-            st.write("📥 Cloning repository...")
-            repo = clone_repository(repo_url)
-            st.write("✅ Repository cloned successfully")
-
-            # ── Step 2: Extract metadata ───────────────────────────
-            st.write("📊 Extracting commit metadata...")
-            df = extract_commit_metadata(repo, max_commits=max_commits)
-            tags = get_tags(repo)
-            branches = get_branches(repo)
-            st.write(f"✅ Extracted **{len(df)}** commits, **{len(tags)}** tags, **{len(branches)}** branches")
+            if gh_parsed:
+                # ── Fast path: GitHub REST API (no clone) ──────────
+                owner, repo_name = gh_parsed
+                gh_tok = github_token if github_token else None
+                if gh_tok:
+                    st.write("⚡ Fetching data via GitHub API with token (full stats)...")
+                else:
+                    st.write("⚡ Fetching data via GitHub API (no token — line stats unavailable)...")
+                df = fetch_github_commits(owner, repo_name, max_commits, token=gh_tok)
+                tags = fetch_github_tags(owner, repo_name, token=gh_tok)
+                branches = fetch_github_branches(owner, repo_name, token=gh_tok)
+                st.write(f"✅ Fetched **{len(df)}** commits, **{len(tags)}** tags, **{len(branches)}** branches")
+            else:
+                # ── Fallback: clone for non-GitHub URLs ────────────
+                st.write("📥 Cloning repository...")
+                repo = clone_repository(repo_url, depth=max_commits)
+                st.write("✅ Repository cloned successfully")
+                st.write("📊 Extracting commit metadata...")
+                df = extract_commit_metadata(repo, max_commits=max_commits)
+                tags = get_tags(repo)
+                branches = get_branches(repo)
+                st.write(f"✅ Extracted **{len(df)}** commits, **{len(tags)}** tags, **{len(branches)}** branches")
 
             # ── Step 3: Classify commits ───────────────────────────
             st.write("🏷️ Classifying commits...")
@@ -260,7 +283,7 @@ if analyze_btn and repo_url:
         with col_left:
             st.dataframe(
                 contributors.head(15)[["author", "commits", "lines_added", "lines_deleted"]],
-                use_container_width=True,
+                width="stretch",
                 hide_index=True,
             )
         with col_right:
@@ -275,7 +298,7 @@ if analyze_btn and repo_url:
             st.dataframe(
                 collab_df[["phase_number", "phase", "active_contributors",
                            "top_contributor", "top_contributor_commits"]],
-                use_container_width=True,
+                width="stretch",
                 hide_index=True,
             )
 
@@ -305,7 +328,7 @@ if analyze_btn and repo_url:
             if not branch_df.empty:
                 st.dataframe(
                     branch_df[["name", "latest_commit"]].head(20),
-                    use_container_width=True,
+                    width="stretch",
                     hide_index=True,
                 )
             st.markdown("---")
