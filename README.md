@@ -2,7 +2,7 @@
 
 **AI-Powered Repository Evolution Analyzer**
 
-A Streamlit web application that analyses the complete Git commit history of any public repository and generates a chronological narrative describing how the project evolved — powered by Hugging Face AI models.
+A Streamlit web application that analyses the complete Git commit history of any public repository and generates a chronological narrative describing how the project evolved.
 
 ---
 
@@ -18,7 +18,7 @@ A Streamlit web application that analyses the complete Git commit history of any
 | **Contributor Insights** | Rank contributors, show commit distribution, and analyse collaboration intensity per development phase |
 | **Branch Structure** | Extract and display all repository branches |
 | **Inactivity Detection** | Identify periods of inactivity (gaps with no commits) in the project timeline |
-| **AI Narrative Generation** | Hugging Face–powered documentary-style chronological story with beginning, turning points, collaboration evolution, and current state |
+| **Narrative Generation** | High-quality template narrative by default, with optional Hugging Face AI enhancement when token + provider permissions are available |
 | **Interactive Visualisations** | Commit activity charts, contributor bar charts, commit type pie charts, code churn over time |
 
 ---
@@ -50,7 +50,9 @@ Repository Analysis Engine
 Structured Repository Summary
         │
         ▼
-Narrative Generator (Hugging Face)
+Narrative Generator
+        ├── Template Narrative (default, fast, reliable)
+        └── Hugging Face Inference API (optional enhancement)
         │
         ▼
 Visualisation + Dashboard (Streamlit)
@@ -137,24 +139,32 @@ A GitHub token increases the API rate limit from 60 to 5,000 requests/hour and e
 
 ### Hugging Face Token (Optional)
 
-Enables the HF Inference API for higher-quality AI narratives.
+Enables optional AI enhancement via Hugging Face Inference Providers.
+
+Use a **Fine-grained token** and enable:
+- **Make calls to Inference Providers**
+
+Without this permission, you may see `403 Forbidden` for provider calls.
 
 ---
 
-## 🤖 AI Model Configuration
+## 🤖 Narrative Generation Configuration
 
-The narrative generator supports three strategies (tried in order):
+The app uses this strategy:
 
 | Priority | Method | Requirement |
 |---|---|---|
-| 1 | Hugging Face Inference API | Set `HF_TOKEN` env var or provide token in UI |
-| 2 | Local `transformers` pipeline | `transformers` + `torch` installed |
-| 3 | Template-based narrative | Always works — no API / GPU needed |
+| 1 | Template-based narrative | Always available (default) |
+| 2 | Hugging Face Inference API | HF token with provider permissions |
 
-**Supported models:**
-- `facebook/bart-large-cnn` (default — best for summarisation)
-- `t5-small` (lightweight alternative)
-- `sshleifer/distilbart-cnn-12-6` (distilled, faster)
+**Model options in UI:**
+- `Qwen/Qwen3-8B` (default)
+- `Qwen/Qwen3-Coder-Next`
+- `meta-llama/Llama-3.1-8B`
+
+Notes:
+- Provider/model availability can change over time.
+- If API fails or is slow, the app automatically falls back to the template narrative.
 
 ---
 
@@ -181,8 +191,7 @@ After analysing a repository you will see:
 - **GitPython** — fallback Git repository interaction
 - **pandas / numpy** — data processing
 - **matplotlib / seaborn** — visualisations
-- **Hugging Face transformers** — AI narrative generation
-- **requests** — HTTP client for API calls
+- **huggingface_hub (InferenceClient)** — optional AI narrative enhancement
 
 ---
 
